@@ -1,38 +1,50 @@
-import random
-import pygame
+import pygame.display
+
+from classes import *
 from config import *
+from funcs import create_blocks
 
-pygame.init()
-sc = pygame.display.set_mode((W, H), pygame.DOUBLEBUF)
-pygame.display.set_caption("Arcanoid")
-pygame.display.set_icon(pygame.image.load("grafics/icon.bmp"))
-clock = pygame.time.Clock()
-
-x = 300
-rect_color = WHITE
-
-circle = pygame.Surface(())
+paddle = Paddle()
+ball = Ball()
+blocks = create_blocks()
 
 while True:
+    sc.fill(BLACK)
+
+    # Обработка событий
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             exit()
-        elif (event.type == pygame.MOUSEBUTTONDOWN and (10 < event.pos[0] < 300 and 10 < event.pos[1] < 50)):
-            rect_color = random.choice([GREEN, BLUE, RED])
 
+    # Управление платформой
     keys = pygame.key.get_pressed()
     if keys[pygame.K_LEFT]:
-        x-= SPEED
-    elif keys[pygame.K_RIGHT]:
-        x += SPEED
+        paddle.move(-PADDLE_SPEED)
+    if keys[pygame.K_RIGHT]:
+        paddle.move(PADDLE_SPEED)
 
-    sc.fill(BLACK)
-    pygame.draw.rect(sc, rect_color, (10, 10, 300, 50))
-    pygame.draw.rect(sc, WHITE, (350, 10, 300, 50))
-    pygame.draw.rect(sc, WHITE, (690, 10, 300, 50))
+    # Движение мяча
+    ball.move()
 
-    pygame.draw.circle(sc, WHITE, (500, 610), 40)
-    pygame.draw.line(sc, WHITE, (x, 650), (x + 400, 650), 5)
-    pygame.draw.arc(sc, WHITE, (x, 500, 400, 300), 2 * pi, pi, 3)
+    # Проверка столкновений мяча с платформой
+    if ball.rect.colliderect(paddle.rect):
+        ball.bounce()
+
+    # Проверка столкновений мяча с блоками
+    for block in blocks[:]:
+        if ball.rect.colliderect(block.rect):
+            ball.bounce()
+            blocks.remove(block)
+
+    # Проверка проигрыша
+    if ball.rect.bottom >= H:
+        exit()
+
+    # Рисование объектов
+    paddle.draw()
+    ball.draw()
+    for block in blocks:
+        block.draw()
+
     pygame.display.update()
     clock.tick(FPS)
